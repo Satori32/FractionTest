@@ -2,46 +2,44 @@
 #include <cstdint>
 #include <numeric>
 #include <limits>
+#include <algorithm>
 
 //cant use for minus field.
 
 class Fraction {
 public:
 	Fraction(){}
-	Fraction(std::uintmax_t N):Denominator(1),Numerator(N){}
-	Fraction(std::uintmax_t Bunnsi,std::uintmax_t Bunnbo,bool IsMinus=false):Numerator(Bunnsi),Denominator(Bunnbo),SignF(IsMinus){}
+	Fraction(std::intmax_t N):Denominator(1),Numerator(N){}
+	Fraction(std::intmax_t Bunnsi,std::uintmax_t Bunnbo):Numerator(Bunnsi),Denominator(Bunnbo){}
 
 	operator double() const {
-		return SignF ? (Numerator / (double)Denominator) : -(Numerator / (double)Denominator);
+		return (Numerator / (double)Denominator) ;
 	}
-
-	std::uintmax_t GetNumerator() const {
+	std::intmax_t& GetNumerator() {
 		return Numerator;
+	}
+	std::intmax_t GetNumerator() const {
+		return Numerator;
+
+	}	std::uintmax_t& GetDenominator(){
+		return Denominator;
 	}
 	std::uintmax_t GetDenominator() const {
 		return Denominator;
 	}
-
-	bool Set(const std::uintmax_t& N,const std::uintmax_t& D,bool F){
-		Denominator = D;
-		Numerator = N;
-		SignF =F;
-		return true;
-
-	}
-	bool Set(const std::uintmax_t& N,const std::uintmax_t& D){
+	bool Set(const std::intmax_t& N,const std::uintmax_t& D){
 		Denominator = D;
 		Numerator = N;
 		return true;
 
 	}
 	bool Denomi() {
-		std::uintmax_t D = std::gcd(Numerator, Denominator);
+		std::intmax_t D = std::gcd(std::abs(Numerator), Denominator);
 
 		while (D != 1) {
 			Numerator /= D;
 			Denominator /= D;
-			D = std::gcd(Numerator, Denominator);
+			D = std::gcd(std::abs(Numerator), Denominator);
 		}
 		return true;
 	}
@@ -51,8 +49,8 @@ public:
 	}
 	Fraction operator +(const Fraction& In)const {		
 		std::uintmax_t Mul= GetDenominator()* In.GetDenominator();
-		Fraction A{(GetNumerator() * (Mul/GetDenominator())),Mul};
-		Fraction B{(In.GetNumerator() * (Mul/In.GetDenominator())),Mul};
+		Fraction A{static_cast<std::intmax_t>(GetNumerator() * (Mul/GetDenominator())),Mul};
+		Fraction B{static_cast<std::intmax_t>(In.GetNumerator() * (Mul/In.GetDenominator())),Mul};
 		Fraction T{ A.GetNumerator() + B.GetNumerator(),Mul };
 		T.Denomi();
 		return T;
@@ -60,33 +58,23 @@ public:
 	}
 	Fraction operator -(const Fraction& In)const {
 		std::uintmax_t Mul= GetDenominator()* In.GetDenominator();
-		Fraction A{(GetNumerator() * (Mul/GetDenominator())),Mul};
-		Fraction B{(In.GetNumerator() * (Mul/In.GetDenominator())),Mul};
+		Fraction A{static_cast<std::intmax_t>(GetNumerator() * (Mul/GetDenominator())),Mul};
+		Fraction B{static_cast<std::intmax_t>(In.GetNumerator() * (Mul/In.GetDenominator())),Mul};
 		Fraction T{ A.GetNumerator() - B.GetNumerator(),Mul };
-		if (T.GetNumerator() > GetNumerator()) {//this is bad of bad.
-			T.Set(std::numeric_limits<std::uintmax_t>::max() - T.GetNumerator()+1, T.GetDenominator());
-			T.SignF = true;
-		}
 		T.Denomi();		
 		return T;
 	}
 	Fraction operator *(const Fraction& In)const {
 		Fraction T(GetNumerator() * In.GetNumerator(), GetDenominator() * In.GetDenominator());
-
-		if (In.SignF != SignF) {T.SignF = true;	}
-		if (In.SignF == SignF) {T.SignF = false;}
-
 		T.Denomi();
 		return T;
 	
 	}
 
 	Fraction operator /(const Fraction& In)const {
-		Fraction T(GetNumerator() * In.GetDenominator(), GetDenominator() * In.GetNumerator());
+		Fraction T(GetNumerator() * In.GetDenominator()*(In.GetNumerator()>0?1:-1), GetDenominator() * std::abs(In.GetNumerator()));
 
-		if (In.SignF != SignF) {T.SignF = true;	}
-		if (In.SignF == SignF) {T.SignF = false;}
-		
+
 		T.Denomi();
 		return T;
 	
@@ -94,14 +82,13 @@ public:
 
 protected:
 	std::uintmax_t Denominator = 1;//分母
-	std::uintmax_t Numerator = 0;//分子
-	bool SignF = false;//マイナスか？
+	std::intmax_t Numerator = 0;//分子
 };
 
 int main() {
 	Fraction A = 10;
 	Fraction AA = 100;
-	Fraction B(1, 10);
+	Fraction B(-1, 10);
 
 	Fraction C = A + B;
 	Fraction D = B - A;
@@ -113,13 +100,14 @@ int main() {
 	Fraction EE = AA * A;
 	Fraction FF = AA / A;
 
-	std::cout << C.GetNumerator() << '/' << C.GetDenominator() << std::endl;
-	std::cout << D.GetNumerator() << '/' << D.GetDenominator() << std::endl;
-	std::cout << E.GetNumerator() << '/' << E.GetDenominator() << std::endl;
-	std::cout << F.GetNumerator() << '/' << F.GetDenominator() << std::endl;
-	std::cout << CC.GetNumerator() << '/' << CC.GetDenominator() << std::endl;
-	std::cout << DD.GetNumerator() << '/' << DD.GetDenominator() << std::endl;
-	std::cout << EE.GetNumerator() << '/' << EE.GetDenominator() << std::endl;
-	std::cout << FF.GetNumerator() << '/' << FF.GetDenominator() << std::endl;
+	std::cout << C.GetNumerator() << '/' << C.GetDenominator() <<'='<<C<< std::endl;
+	std::cout << D.GetNumerator() << '/' << D.GetDenominator() <<'='<<D<< std::endl;
+	std::cout << E.GetNumerator() << '/' << E.GetDenominator() <<'='<<E<< std::endl;
+	std::cout << F.GetNumerator() << '/' << F.GetDenominator() <<'='<<F<< std::endl;
+
+	std::cout << CC.GetNumerator() << '/' << CC.GetDenominator() <<'='<<CC<< std::endl;
+	std::cout << DD.GetNumerator() << '/' << DD.GetDenominator() <<'='<<DD<< std::endl;
+	std::cout << EE.GetNumerator() << '/' << EE.GetDenominator() <<'='<<EE<< std::endl;
+	std::cout << FF.GetNumerator() << '/' << FF.GetDenominator() <<'='<<FF<< std::endl;
 	return 0;
 }
