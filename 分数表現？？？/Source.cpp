@@ -3,6 +3,8 @@
 #include <numeric>
 #include <limits>
 
+//cant use for minus field.
+
 class Fraction {
 public:
 	Fraction(){}
