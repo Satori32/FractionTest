@@ -5,49 +5,72 @@
 #include <algorithm>
 
 //cant use for minus field.
+//std::gcd need C++17.
+
+#define CONSTEXPR /**/constexpr/**/
 
 class Fraction {
+protected:
+	template<class T>
+	CONSTEXPR T Abs(const T& In) const {
+		return In > 0 ? In : -In;
+	}
+	template<class T>
+	CONSTEXPR T Gcd(T A,T B) const {
+		if (A < B) {
+			T AA = A;
+			A = B;
+			B = AA;
+		}
+		T R = A%B;
+		while (R) {
+			A = B;
+			B = R;
+			R = A % B;
+		}
+		return B;
+	}
 public:
-	Fraction(){}
-	Fraction(std::intmax_t N):Denominator(1),Numerator(N){}
-	Fraction(std::intmax_t Bunnsi,std::uintmax_t Bunnbo):Numerator(Bunnsi),Denominator(Bunnbo){}
+	CONSTEXPR Fraction(){}
+	CONSTEXPR Fraction(std::intmax_t N):Denominator(1),Numerator(N){}
+	CONSTEXPR Fraction(std::intmax_t Bunnsi,std::uintmax_t Bunnbo):Numerator(Bunnsi),Denominator(Bunnbo){}
 
-	operator double() const {
+	CONSTEXPR operator double() const {
 		return (Numerator / (double)Denominator) ;
 	}
-	std::intmax_t& GetNumerator() {
+	CONSTEXPR std::intmax_t& GetNumerator() {
 		return Numerator;
 	}
-	std::intmax_t GetNumerator() const {
+	CONSTEXPR std::intmax_t GetNumerator() const {
 		return Numerator;
 
 	}	std::uintmax_t& GetDenominator(){
 		return Denominator;
 	}
-	std::uintmax_t GetDenominator() const {
+	CONSTEXPR std::uintmax_t GetDenominator() const {
 		return Denominator;
 	}
-	bool Set(const std::intmax_t& N,const std::uintmax_t& D){
+	CONSTEXPR bool Set(const std::intmax_t& N,const std::uintmax_t& D){
 		Denominator = D;
 		Numerator = N;
 		return true;
 
 	}
-	bool Denomi() {
-		std::intmax_t D = std::gcd(std::abs(Numerator), Denominator);
+	CONSTEXPR bool Denomi() {
+		std::intmax_t D = Gcd<std::uintmax_t>(Abs(Numerator), Denominator);
 
 		while (D != 1) {
 			Numerator /= D;
 			Denominator /= D;
-			D = std::gcd(std::abs(Numerator), Denominator);
+			D =  Gcd<std::uintmax_t>(Abs(Numerator), Denominator);
 		}
 		return true;
 	}
 
-	double ToDouble() {
+	CONSTEXPR double ToDouble() const{
 		return *this;
 	}
-	Fraction operator +(const Fraction& In)const {		
+	CONSTEXPR Fraction operator +(const Fraction& In)const {		
 		std::uintmax_t Mul= GetDenominator()* In.GetDenominator();
 		Fraction A{static_cast<std::intmax_t>(GetNumerator() * (Mul/GetDenominator())),Mul};
 		Fraction B{static_cast<std::intmax_t>(In.GetNumerator() * (Mul/In.GetDenominator())),Mul};
@@ -56,7 +79,7 @@ public:
 		return T;
 
 	}
-	Fraction operator -(const Fraction& In)const {
+	CONSTEXPR Fraction operator -(const Fraction& In)const {
 		std::uintmax_t Mul= GetDenominator()* In.GetDenominator();
 		Fraction A{static_cast<std::intmax_t>(GetNumerator() * (Mul/GetDenominator())),Mul};
 		Fraction B{static_cast<std::intmax_t>(In.GetNumerator() * (Mul/In.GetDenominator())),Mul};
@@ -64,15 +87,16 @@ public:
 		T.Denomi();		
 		return T;
 	}
-	Fraction operator *(const Fraction& In)const {
+	CONSTEXPR Fraction operator *(const Fraction& In)const {
 		Fraction T(GetNumerator() * In.GetNumerator(), GetDenominator() * In.GetDenominator());
 		T.Denomi();
 		return T;
 	
 	}
 
-	Fraction operator /(const Fraction& In)const {
-		Fraction T(GetNumerator() * In.GetDenominator()*(In.GetNumerator()>0?1:-1), GetDenominator() * std::abs(In.GetNumerator()));
+	CONSTEXPR Fraction operator /(const Fraction& In)const {
+		int S = In.GetNumerator() > 0 ? 1 : -1;
+		Fraction T(GetNumerator() * In.GetDenominator()*S,GetDenominator() * Abs(In.GetNumerator()));
 
 
 		T.Denomi();
@@ -80,30 +104,54 @@ public:
 	
 	}
 
+
+public:
+
 protected:
 	std::uintmax_t Denominator = 1;//•ª•ê
 	std::intmax_t Numerator = 0;//•ªŽq
 };
 
+
+template<class Char>
+std::basic_ostream<Char>& operator <<(std::basic_ostream<Char>& os, const Fraction& F) {
+	os << F.GetNumerator() << '/' << F.GetDenominator();
+	return os;
+}
+/** /
 int main() {
-	Fraction A = 10;
-	Fraction AA = 100;
-	Fraction B(-1, 10);
 
-	Fraction C = A + B;
-	Fraction D = B - A;
-	Fraction E = A * B;
-	Fraction F = A / B;
+	constexpr std::size_t L = 100;
+	for (std::uintmax_t i = 1; i < L; i++) {
+		for (std::intmax_t j = 0; j < L; j++) {
+			Fraction F(j, i);	
+			std::cout <<F<<'='<<static_cast<double>(F)<< std::endl;
+		}
+	}
 
-	Fraction CC = AA + A;
-	Fraction DD = AA - A;
-	Fraction EE = AA * A;
-	Fraction FF = AA / A;
+	return 0;
 
-	std::cout << C.GetNumerator() << '/' << C.GetDenominator() <<'='<<C<< std::endl;
-	std::cout << D.GetNumerator() << '/' << D.GetDenominator() <<'='<<D<< std::endl;
-	std::cout << E.GetNumerator() << '/' << E.GetDenominator() <<'='<<E<< std::endl;
-	std::cout << F.GetNumerator() << '/' << F.GetDenominator() <<'='<<F<< std::endl;
+}
+/**/
+int main() {
+	CONSTEXPR Fraction A = 10;
+	CONSTEXPR Fraction AA = 100;
+	CONSTEXPR Fraction B(-1, 10);
+
+	CONSTEXPR Fraction C = A + B;
+	CONSTEXPR Fraction D = B - A;
+	CONSTEXPR Fraction E = A * B;
+	CONSTEXPR Fraction F = A / B;
+
+	CONSTEXPR Fraction CC = AA + A;
+	CONSTEXPR Fraction DD = AA - A;
+	CONSTEXPR Fraction EE = AA * A;
+	CONSTEXPR Fraction FF = AA / A;
+
+	std::cout << C.GetNumerator() << '/' << C.GetDenominator() <<'='<<C<<'='<<static_cast<double>(C)<<std::endl;
+	std::cout << D.GetNumerator() << '/' << D.GetDenominator() <<'='<<D<<'='<<static_cast<double>(D)<<std::endl;
+	std::cout << E.GetNumerator() << '/' << E.GetDenominator() <<'='<<E<<'='<<static_cast<double>(E)<<std::endl;
+	std::cout << F.GetNumerator() << '/' << F.GetDenominator() <<'='<<F<<'='<<static_cast<double>(F)<<std::endl;
 
 	std::cout << CC.GetNumerator() << '/' << CC.GetDenominator() <<'='<<CC<< std::endl;
 	std::cout << DD.GetNumerator() << '/' << DD.GetDenominator() <<'='<<DD<< std::endl;
@@ -111,3 +159,4 @@ int main() {
 	std::cout << FF.GetNumerator() << '/' << FF.GetDenominator() <<'='<<FF<< std::endl;
 	return 0;
 }
+/**/
